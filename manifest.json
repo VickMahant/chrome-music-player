@@ -5,20 +5,25 @@
   "description": "Plays songs from your bookmarks",
   "version": "1.0",
 
-  "options_page": "options.html",
+  "options_page": "src/options.html",
 
   "icons": {
-    "48": "icon.png"
+    "48": "src/img/icon.png"
   },
 
   "permissions": [
-    "bookmarks",
-    "tabs", 
-    "<all_urls>"
+    "background",
+    "bookmarks"
   ],
 
+  "background": {
+    "page": "src/background.html"
+    //"scripts": ["player.js"]
+    //"persistent": false
+  },
+
   "browser_action": {
-    "default_icon": "icon.png",
-    "default_popup": "popup.html"
+    "default_icon": "src/img/icon.png",
+    "default_popup": "src/popup.html"
   }
 }

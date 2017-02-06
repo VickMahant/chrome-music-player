@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        height: 150px;
+        width: 220px;
+      }
+      .wrapper {
+        text-align: center;
+        width: 150px;
+        margin: 0 auto 0 auto;
+      }
+    </style>
+  </head>
+<body>
+  <div class="wrapper">
+    <button id="backward"><<</button>
+    <button id="play">Play</button>
+    <button id="forward">>></button>
+    <br>
+    <button id="pause">Pause</button>
+    <br>
+    <input id="volume" type=range multiple min=0 max=100 step="1" value="50">
+    <br>
+    <button id="stop">Stop</button>
+    <button id="mute">Mute</button>
+  </div>
+  <script src="scripts/popup.js"></script>
+</body>
+</html>
