@@ -2,22 +2,22 @@
 	console.log('in player js');
 })();
 
-var music = [];
-
 // this will probably have to run everytime a song ends
 // look into docs, a couple of useful functions: search,getSubTree,getChildren,create
 // https://developer.chrome.com/extensions/bookmarks
-chrome.bookmarks.getTree(function(data) {
-	console.log(data);
-	for (var i = 0; i < data['0'].children['0'].children[4].children.length; i++) {
+var music = []; // this is kind of a waste of space, but it can be used as a filter
+var volume;
+var counter = 0;
+
+function loadBookmarks(data, callback) {
+	for (var i = 0; i < data['0'].children['0'].children['4'].children.length; i++) {
 		// if object is not a sub folder, then we store it as music.
-		if (data['0'].children['0'].children[4].children[i].children == undefined) {
-			music.push(data['0'].children['0'].children[4].children[i]);
+		if (data['0'].children['0'].children['4'].children[i].children == undefined) {
+			music.push(data['0'].children['0'].children['4'].children[i]);
 		}
 	}
-});
-
-console.log(music);
+	callback(); // TODO: wrap this in it's own function because I call it like 50 times
+}
 
 var tag = document.createElement('script');
 
@@ -27,22 +27,32 @@ var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 var player;
+var playerDetails = {
+	height: '0',
+	width: '0',
+	videoId: '',
+	events: {
+		'onReady': onPlayerReady,
+		'onStateChange': onPlayerStateChange
+	}
+};
 
 function onYouTubeIframeAPIReady() {
-	player = new YT.Player('player', {
-		height: '0',
-		width: '0',
-		videoId: 'Y9Goid0p4pg',
-		events: {
-			'onReady': onPlayerReady,
-			'onStateChange': onPlayerStateChange
-		}
+	chrome.bookmarks.getTree(function(data) {
+		//console.log('data', data);
+		loadBookmarks(data, function() {
+			// sets video id to first song in bookmarks, gonna have to throw errors here if not youtube
+			playerDetails.videoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
+			player = new YT.Player('player', playerDetails);
+		});
 	});
 }
 
+console.log(music.length);
+
 function onPlayerReady(event) {
 	event.target.playVideo();
-	event.target.pauseVideo(); // temp stop so it doesnt play ever reload
+	//event.target.pauseVideo(); // temp stop so it doesnt play ever reload
 }
 
 var done = false;
@@ -58,8 +68,6 @@ function stopVideo() {
 	player.stopVideo();
 }
 
-var volume;
-
 // getDuration and getCurrentTime()
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -69,17 +77,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 	} else if (request.message === 'pause') {
 		player.pauseVideo();
 		sendResponse({message: 'pause received'});
-
-	// TODO: implement these with bookmarks
-	// somehow has to specify fold, maybe in settings idk?
 	} else if (request.message === 'next') {
-		player.nextVideo();
+		//player.nextVideo();
+		counter++;
+		chrome.bookmarks.getTree(function(data) {
+			loadBookmarks(data, function() {
+				if (counter >= music.length - 1) {
+					counter = 0;
+				}
+				playerDetails.videoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
+				player = new YT.Player('player', playerDetails);
+			});
+		});
 		sendResponse({message: 'next received'});
 	} else if (request.message === 'prev') {
-		player.previousVideo();
+		//player.previousVideo();
+		counter--;
+		chrome.bookmarks.getTree(function(data) {
+			loadBookmarks(data, function() {
+				if (counter < 0) {
+					counter = music.length - 1;
+				}
+				playerDetails.videoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
+				player = new YT.Player('player', playerDetails);
+			});
+		});
 		sendResponse({message: 'prev received'});
-
-
 	} else if (request.message === 'mute') {
 		if (!player.isMuted()) {
 			player.mute();
