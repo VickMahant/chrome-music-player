@@ -1,4 +1,7 @@
-// popup.js
+/**
+ * @author Brandon Manke
+ * @file player.js
+ */
 (function() {
 	var volume;
 
