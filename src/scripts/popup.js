@@ -1,4 +1,7 @@
-// popup.js
+/**
+ * @author Brandon Manke
+ * @file player.js
+ */
 (function() {
 	var volume;
 
@@ -31,14 +34,14 @@
 		});
 	});
 
-	document.getElementById('forward').addEventListener('click', function() {
-		chrome.runtime.sendMessage({message: 'forward'}, function(response) {
+	document.getElementById('next').addEventListener('click', function() {
+		chrome.runtime.sendMessage({message: 'next'}, function(response) {
 			console.log(response.message);
 		});
 	});
 
-	document.getElementById('backward').addEventListener('click', function() {
-		chrome.runtime.sendMessage({message: 'backward'}, function(response) {
+	document.getElementById('prev').addEventListener('click', function() {
+		chrome.runtime.sendMessage({message: 'prev'}, function(response) {
 			console.log(response.message);
 		});
 	});
@@ -49,7 +52,7 @@
 		chrome.runtime.sendMessage({message: 'volume', volumeLevel: volume.value}, function(response) {
 			// I honestly have no idea why this is working right now, 
 			// because it only send the response.volumeChanged when this is false.
-			// If I send it when it is true, the input range becomes really slow and jumps around.
+			// If I send it when it is true, the input range becomes really buggy and jumps around.
 		 	if (response.volumeChanged) {
 		 		volume.value = response.volumeLevel;
 		 	}
