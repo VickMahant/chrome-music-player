@@ -13,7 +13,11 @@
 
   "permissions": [
     "background",
-    "bookmarks"
+    "bookmarks",
+    "http://www.youtube.com/",
+    "https://www.youtube.com/",
+    "https://s.ytimg.com/",
+    "http://s.ytimg.com/"
   ],
 
   "background": {

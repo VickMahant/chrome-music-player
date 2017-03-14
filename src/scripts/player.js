@@ -6,182 +6,196 @@
 // Thumbnail for nice looking frontend:
 // http://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api?rq=1
 
+'use strict';
 // Maybe try to move some of these out of global
 var music = []; // this is kind of a waste of space, but it can be used as a filter
 var volume;
 var counter = 0;
 
 function loadBookmarks(data, callback) {
-	music = [];
-	for (var i = 0; i < data['0'].children['0'].children['4'].children.length; i++) {
-		// if object is not a sub folder, then we store it as music.
-		// maybe include isYoutubeUrl filter here?
-		if (data['0'].children['0'].children['4'].children[i].children == undefined) {
-			music.push(data['0'].children['0'].children['4'].children[i]);
-		}
-	}
-	//console.log('music length:', music.length);
-	callback(); // this might be a little redundant
+    music = [];
+    for (var i = 0; i < data['0'].children['0'].children['4'].children.length; i++) {
+        // if object is not a sub folder, then we store it as music.
+        // maybe include isYoutubeUrl filter here?
+        if (data['0'].children['0'].children['4'].children[i].children == undefined) {
+            music.push(data['0'].children['0'].children['4'].children[i]);
+        }
+    }
+    //console.log('music length:', music.length);
+    callback(); // this might be a little redundant
 }
 
 function checkCounterLength(message) {
-	if (message === 'next') {
-		counter++;
-		chrome.bookmarks.getTree(function(data) {
-			console.log('next checkCounterLength');
-			//console.log('music length:', music.length);
-			loadBookmarks(data, function() {
-				if (counter >= music.length - 1) {
-					counter = 0;
-				}
-			});
-		});
-	} else if (message === 'prev') {
-		counter--;
-		chrome.bookmarks.getTree(function(data) {
-			console.log('prev checkCounterLength');
-			//console.log('music length:', music.length);
-			loadBookmarks(data, function() {
-				if (counter < 0) {
-					counter = music.length - 1;
-				}	
-			});
-		});
-	} else {
-		throw console.log('IllegalArgumentException'); // temp for now
-	}
+    if (message === 'next') {
+        counter++;
+        chrome.bookmarks.getTree(function(data) {
+            console.log('next checkCounterLength');
+            //console.log('music length:', music.length);
+            loadBookmarks(data, function() {
+                if (counter >= music.length - 1) {
+                    counter = 0;
+                }
+            });
+        });
+    } else if (message === 'prev') {
+        counter--;
+        chrome.bookmarks.getTree(function(data) {
+            console.log('prev checkCounterLength');
+            //console.log('music length:', music.length);
+            loadBookmarks(data, function() {
+                if (counter < 0) {
+                    counter = music.length - 1;
+                }   
+            });
+        });
+    } else {
+        throw console.log('IllegalArgumentException'); // temp for now
+    }
 }
 
 function isYoutubeVideo(url) {
-	console.log('url substring test', url.substring(url.indexOf('.') + 1, url.indexOf('e') + 1));
-	if (url.substring(url.indexOf('.') + 1, url.indexOf('e') + 1) === 'youtube') {
-		return true;
-	}
-	return false;
+    console.log('url substring test', url.substring(url.indexOf('.') + 1, url.indexOf('e') + 1));
+    if (url.substring(url.indexOf('.') + 1, url.indexOf('e') + 1) === 'youtube') {
+        return true;
+    }
+    return false;
 }
 
 function loadNewVideo() {
-	chrome.bookmarks.getTree(function(data) {
-		loadBookmarks(data, function () {
-			console.log('counter', counter);
-			if (isYoutubeVideo(music[counter].url)) {
-				var nextVideoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
-				console.log('nextVideo', nextVideoId);
-				player.loadVideoById(nextVideoId);
-				player.playVideo();
-			}
-		});
-	});
+    chrome.bookmarks.getTree(function(data) {
+        loadBookmarks(data, function () {
+            console.log('counter', counter);
+            if (isYoutubeVideo(music[counter].url)) {
+                var nextVideoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
+                console.log('nextVideo', nextVideoId);
+                player.loadVideoById(nextVideoId);
+                player.playVideo();
+            }
+        });
+    });
 }
+
+// XML Get Request
+/*var xhr = new XMLHttpRequest();
+xhr.open('GET', 'https://www.youtube.com/iframe_api');
+
+xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+        var resp = JSON.parse(xhr.responseText);
+        console.log(resp);
+    }
+}
+xhr.send();*/
 
 var tag = document.createElement('script');
 
 tag.src = 'scripts/lib/youtube-api.js';
+//tag.src = "https://www.youtube.com/player_api";
 
 var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 var player;
 var playerDetails = {
-	height: '0',
-	width: '0',
-	videoId: '',
-	events: {
-		'onReady': onPlayerReady,
-		'onStateChange': onPlayerStateChange,
-		'onError': onPlayerError
-	}
+    height: '0',
+    width: '0',
+    videoId: '',
+    events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange,
+        'onError': onPlayerError
+    }
 };
 
 function onYouTubeIframeAPIReady() {
-	music = [];
-	chrome.bookmarks.getTree(function(data) {
-		console.log('counter initial', counter);
-		//console.log('data', data);
-		loadBookmarks(data, function() {
-			// sets video id to first song in bookmarks, gonna have to throw errors here if not youtube
-			playerDetails.videoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
-			player = new YT.Player('player', playerDetails);
-		});
-	});
+    music = [];
+    chrome.bookmarks.getTree(function(data) {
+        console.log('counter initial', counter);
+        //console.log('data', data);
+        loadBookmarks(data, function() {
+            // sets video id to first song in bookmarks, gonna have to throw errors here if not youtube
+            playerDetails.videoId = music[counter].url.substring((music[counter].url.indexOf('=') + 1));
+            player = new YT.Player('player', playerDetails);
+        });
+    });
 }
 
 function onPlayerReady(event) {
-	event.target.playVideo();
+    event.target.playVideo();
 }
 
 var done = false;
 function onPlayerStateChange(event) {
-	if (event.data == YT.PlayerState.PLAYING && !done) {
-		//setTimeout(stopVideo, 10000);
-		done = true;
-	}
+    if (event.data == YT.PlayerState.PLAYING && !done) {
+        //setTimeout(stopVideo, 10000);
+        done = true;
+    }
 
-	// if video is done playing
-	if (event.data === 0) {
-		checkCounterLength('next');
-		loadNewVideo();
-	}
+    // if video is done playing
+    if (event.data === 0) {
+        checkCounterLength('next');
+        loadNewVideo();
+    }
 }
 
 // The reason some of the urls aren't playing are because they aren't allowed to be embedded
 // I will look into detecting if it's a playlist and loading that, or at least the first video (loadPlaylist())
 // because some playlists generated by youtube go on forever.
 function onPlayerError(event) {
-	if (event.data === 150 || event.data === 101) {
-		checkCounterLength('next');
-		loadNewVideo();
-	}
-	return console.log('(most likely disabled embedded or url error, skipping) error:', event);
+    if (event.data === 150 || event.data === 101) {
+        checkCounterLength('next');
+        loadNewVideo();
+    }
+    return console.log('(most likely disabled embedded or url error, skipping) error:', event);
 }
 
 function stopVideo() {
-	player.stopVideo();
+    player.stopVideo();
 }
 
 // getDuration and getCurrentTime()
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-	if (request.message === 'play') {
-		player.playVideo();
-		sendResponse({message: 'play received'});
-	} else if (request.message === 'pause') {
-		player.pauseVideo();
-		sendResponse({message: 'pause received'});
-	} else if (request.message === 'next') {
-		//player.nextVideo();
-		checkCounterLength(request.message);
-		loadNewVideo();
-		sendResponse({message: 'next received'});
-	} else if (request.message === 'prev') {
-		//player.previousVideo();
-		checkCounterLength(request.message);
-		loadNewVideo();
-		sendResponse({message: 'prev received'});
-	} else if (request.message === 'mute') {
-		if (!player.isMuted()) {
-			player.mute();
-		} else {
-			player.unMute();
-		}
-		sendResponse({message: 'mute received'});
-	} else if (request.message === 'stop') {
-		stopVideo();
-	} else if (request.message === 'volume') {
-		volume = request.volumeLevel;
-		var changed = true;
-		if (player.getVolume() != volume) {
-			player.setVolume(volume);
-			sendResponse({volumeLevel: player.getVolume()}); 
-		} else {
-			changed = false;
-			sendResponse({volumeChanged: changed})
-		}
-	} else if (request.message === 'getVolume') {
-		if (YT.PlayerState.PLAYING) {
-			sendResponse({volumeLevel: player.getVolume()})
-		} // keep an eye on this, not sure if it satifies all cases
-	} else {
-		throw console.log('invalid request:', request); // temporary exception handler
-	}
+    if (request.message === 'play') {
+        player.playVideo();
+        sendResponse({message: 'play received'});
+    } else if (request.message === 'pause') {
+        player.pauseVideo();
+        sendResponse({message: 'pause received'});
+    } else if (request.message === 'next') {
+        //player.nextVideo();
+        checkCounterLength(request.message);
+        loadNewVideo();
+        sendResponse({message: 'next received'});
+    } else if (request.message === 'prev') {
+        //player.previousVideo();
+        checkCounterLength(request.message);
+        loadNewVideo();
+        sendResponse({message: 'prev received'});
+    } else if (request.message === 'mute') {
+        if (!player.isMuted()) {
+            player.mute();
+        } else {
+            player.unMute();
+        }
+        sendResponse({message: 'mute received'});
+    } else if (request.message === 'stop') {
+        stopVideo();
+    } else if (request.message === 'volume') {
+        volume = request.volumeLevel;
+        var changed = true;
+        if (player.getVolume() != volume) {
+            player.setVolume(volume);
+            sendResponse({volumeLevel: player.getVolume()}); 
+        } else {
+            changed = false;
+            sendResponse({volumeChanged: changed})
+        }
+    } else if (request.message === 'getVolume') {
+        if (YT.PlayerState.PLAYING) {
+            sendResponse({volumeLevel: player.getVolume()})
+        } // keep an eye on this, not sure if it satifies all cases
+    } else {
+        throw console.log('invalid request:', request); // temporary exception handler
+    }
 });
